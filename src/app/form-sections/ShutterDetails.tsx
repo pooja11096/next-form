@@ -1,13 +1,12 @@
 'use client'
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
-import { addShutter, removeShutter, cloneShutter, setShutterDetails } from '../store/formSlice';
+import {addShutter, removeShutter, cloneShutter, setShutterDetails, setTotalAmount } from '../store/formSlice';
 import Input from '../components/Input';
 import Dropdown from '../components/Dropdown';
 import Button from '../components/Button';
-import Modal from '../components/Modal';
 
 interface ShutterDetailForm {
   shutterName: string;
@@ -22,7 +21,7 @@ interface FormValues {
 
 export default function ShutterDetails() {
   const dispatch = useDispatch();
-  const { register, handleSubmit, control, setValue, getValues } = useForm<FormValues>({
+  const { handleSubmit, control, setValue, getValues } = useForm<FormValues>({
     defaultValues: {
       shutterDetails: [],
     },
@@ -33,12 +32,8 @@ export default function ShutterDetails() {
     name: 'shutterDetails',
   });
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newShutterName, setNewShutterName] = useState('');
-
-  const shutterNames = useSelector((state: any) => 
-    state.form.shutterDetails.map((shutter: ShutterDetailForm) => shutter.shutterName)
-  );
+  const formData = useSelector((state:any)=>state.form);
+  const shutters = formData.shutters;
 
   const calculateTotalArea = () => {
     return fields.reduce((acc, field) => acc + field.area, 0);
@@ -48,14 +43,11 @@ export default function ShutterDetails() {
     dispatch(setShutterDetails(data.shutterDetails));
   };
 
-  const handleAddShutterName = useCallback((name: string) => {
-    // Update dropdown options in your state
-    dispatch(addShutter(name));
-    setIsModalOpen(false);
-  }, [dispatch]);
-
-  const handleCreateShutter = () => {
-    setIsModalOpen(true);
+  const handleAddShutter = () => {
+    const shutterName = prompt('Enter customer name');
+    if (shutterName) {
+      dispatch(addShutter(shutterName));
+    }
   };
 
   const handleCloneShutter = (index: number) => {
@@ -68,6 +60,10 @@ export default function ShutterDetails() {
 
   const totalArea = calculateTotalArea();
 
+  useEffect(()=>{
+    dispatch(setTotalAmount(totalArea))
+  },[totalArea])
+
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -76,7 +72,7 @@ export default function ShutterDetails() {
             <label>Shutter Name:</label>
             <Dropdown
               name={`shutterDetails.${index}.shutterName`}
-              options={shutterNames}
+              options={shutters}
               selectedValue={field.shutterName}
               onChange={(e) => {
                 const updatedShutterDetails = [...getValues('shutterDetails')];
@@ -84,7 +80,7 @@ export default function ShutterDetails() {
                 setValue('shutterDetails', updatedShutterDetails);
               }}
             />
-            <Button type="button" onClick={handleCreateShutter}>Create Shutter</Button>
+            <Button type="button" onClick={handleAddShutter}>Create Shutter</Button>
 
             <label>Width:</label>
             <Input
@@ -130,12 +126,6 @@ export default function ShutterDetails() {
         <div>Total Area: {totalArea}</div>
         <Button type="submit">Save</Button>
       </form>
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleAddShutterName}
-      />
     </>
   );
 }

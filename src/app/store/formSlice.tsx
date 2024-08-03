@@ -16,8 +16,8 @@ interface GeneralDetails {
 }
 
 interface Discount {
-  type: 'Amount' | 'Percentage' | '';
-  value: number | '';
+  discountType: 'Amount' | 'Percentage' | '';
+  discountValue: number | '';
   totalAfterDiscount: number;
 }
 
@@ -25,6 +25,8 @@ interface FormState {
   generalDetails: GeneralDetails;
   shutterDetails: ShutterDetail[];
   discount: Discount;
+  shutters: string[];
+  totalAmount: number;
 }
 
 const initialState: FormState = {
@@ -32,14 +34,16 @@ const initialState: FormState = {
     personName: '',
     date: '',
     selectedCustomer: '',
-    customers: [],
+    customers: []
   },
   shutterDetails: [],
   discount: {
-    type: '',
-    value: '',
+    discountType: '',
+    discountValue: 0,
     totalAfterDiscount: 0,
   },
+  shutters:[],
+  totalAmount:0
 };
 
 const formSlice = createSlice({
@@ -52,10 +56,13 @@ const formSlice = createSlice({
     addCustomer(state, action: PayloadAction<string>) {
       state.generalDetails.customers.push(action.payload);
     },
+    addShutter(state, action: PayloadAction<string>){
+      state.shutters.push(action.payload);
+    },
     setShutterDetails(state, action: PayloadAction<ShutterDetail[]>) {
       state.shutterDetails = action.payload;
     },
-    addShutter(state, action: PayloadAction<ShutterDetail>) {
+    addShutterDetails(state, action: PayloadAction<ShutterDetail>) {
       state.shutterDetails.push(action.payload);
     },
     removeShutter(state, action: PayloadAction<number>) {
@@ -65,14 +72,17 @@ const formSlice = createSlice({
       const index = action.payload;
       state.shutterDetails.push({ ...state.shutterDetails[index] });
     },
+    setTotalAmount(state, action: PayloadAction<number>){
+      state.totalAmount = action.payload;
+    },
     setDiscount(state, action: PayloadAction<Discount>) {
       state.discount = action.payload;
     },
     updateTotalAfterDiscount(state) {
       const totalArea = state.shutterDetails.reduce((acc, shutter) => acc + shutter.area, 0);
-      const total = state.discount.type === 'Percentage'
-        ? totalArea - (totalArea * (state.discount.value as number)) / 100
-        : totalArea - (state.discount.value as number);
+      const total = state.discount.discountType === 'Percentage'
+        ? totalArea - (totalArea * (state.discount.discountValue as number)) / 100
+        : totalArea - (state.discount.discountValue as number);
 
       state.discount.totalAfterDiscount = total;
     },
@@ -83,9 +93,11 @@ export const {
   setGeneralDetails,
   addCustomer,
   setShutterDetails,
+  addShutterDetails,
   addShutter,
   removeShutter,
   cloneShutter,
+  setTotalAmount,
   setDiscount,
   updateTotalAfterDiscount,
 } = formSlice.actions;
